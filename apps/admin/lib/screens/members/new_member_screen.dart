@@ -85,7 +85,7 @@ class _NewMemberScreenState extends State<NewMemberScreen> {
               keyboardType: TextInputType.phone,
               decoration: const InputDecoration(
                 labelText: 'WhatsApp',
-                helperText: 'Ej: 11 2345 6789 o +54 9 11 2345 6789',
+                helperText: 'Ej: 099 123 456 o +598 99 123 456',
                 prefixIcon: Icon(Icons.chat_outlined),
               ),
             ),

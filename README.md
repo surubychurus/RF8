@@ -78,16 +78,17 @@ real), todo gestionado desde la app de administración.
 Mensuales, de 2 tipos — **Rutina normal** y **Seguimiento** — de 1 a 4 días por semana.
 **Precios: placeholder** (`plans.monthly_price = null` → "Precio a definir"). Se cargan en la tabla `plans`.
 
-### Horarios
-Bloques: 08:00–12:30, 13:30–16:30, 17:00–21:00. Turnos de 1h 30m (tabla `time_slots`):
+### Horarios (Montevideo, Uruguay — zona `America/Montevideo`)
 
-| 08:00–09:30 | 09:30–11:00 | 11:00–12:30 | 13:30–15:00 | 15:00–16:30 | 17:00–18:30 | 18:30–20:00 |
-|---|---|---|---|---|---|---|
+| Día | Bloques | Turnos de 1h 30m (tabla `time_slots`) |
+|---|---|---|
+| Lunes a viernes | 08:00–12:30 · 13:30–16:30 · 17:00–21:00 | 08:00, 09:30, 11:00, 13:30, 15:00, 17:00, 18:30 |
+| Sábados | 08:00–12:30 | 08:00, 09:30, 11:00 |
+| Domingos | cerrado | — |
 
-⚠️ El bloque 17:00–21:00 dura 4 h, que no es múltiplo de 1h 30m: quedaron 2 turnos y sobra
-20:00–21:00. Ajustar `time_slots` según cómo lo maneje el gimnasio (p. ej. un último turno
-19:30–21:00 superpuesto, o uno de 1 h). Por defecto se abre **lunes a sábado**
-(`time_slots.weekdays`).
+⚠️ El bloque 17:00–21:00 dura 4 h, que no es múltiplo de 1h 30m: quedaron 2 turnos
+(17:00–18:30 y 18:30–20:00) y sobra 20:00–21:00. Se ajusta en `time_slots` (p. ej. un último
+turno 19:30–21:00 superpuesto, o uno de 1 h).
 
 ## Marca (placeholders)
 
@@ -102,15 +103,22 @@ Bloques: 08:00–12:30, 13:30–16:30, 17:00–21:00. Turnos de 1h 30m (tabla `t
 
 ## Puesta en marcha
 
-### 1. Probar la app de socios sin backend (modo demo)
+### 1. Correr las apps
+
+Las dos apps ya apuntan al proyecto de Supabase **archivo-natacion**:
 
 ```bash
-cd apps/member
-flutter pub get
-flutter run
+cd apps/member && flutter pub get && flutter run   # app de socios
+cd apps/admin  && flutter pub get && flutter run   # administración
 ```
 
-Usuario `demo` / clave `demo1234`, o "Tengo una invitación" con el código `DEMO`.
+Modo demo de la app de socios (datos en memoria, sin backend):
+
+```bash
+cd apps/member && flutter run --dart-define=DEMO=true
+```
+
+En demo: usuario `demo` / clave `demo1234`, o "Tengo una invitación" con el código `DEMO`.
 
 ### 2. Backend (Supabase)
 
@@ -139,14 +147,7 @@ supabase functions deploy delete-user
 
 - En **Auth → Providers → Email**: desactivar "Allow new users to sign up" (sólo por invitación).
 - En **Resend**: verificar el dominio de RF8 y usar un remitente de ese dominio en `RESEND_FROM`.
-Correr las apps contra Supabase (la admin ya apunta a archivo-natacion por defecto):
-
-```bash
-cd apps/member && flutter run \
-  --dart-define=SUPABASE_URL=https://pnamtuhhettqgkfugzik.supabase.co \
-  --dart-define=SUPABASE_KEY=sb_publishable_3-satDb7Co-YxlTscEPNgQ_ht_F19lE
-cd apps/admin && flutter run
-```
+Para apuntar las apps a otro proyecto: `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_KEY=...`.
 
 ### 3. Links de invitación
 

@@ -68,6 +68,13 @@ void main() {
     expect(() => repo.book(1, far), throwsA(isA<AppException>()));
   });
 
+  test('los sábados sólo abre de 08:00 a 12:30', () async {
+    final saturday = monday.add(const Duration(days: 5));
+    final slots = await repo.fetchSlots(saturday);
+    expect(slots.map((s) => s.slot.label), ['08:00 – 09:30', '09:30 – 11:00', '11:00 – 12:30']);
+    expect(() => repo.book(4, saturday), throwsA(isA<AppException>()));
+  });
+
   test('los turnos son de 1h30 dentro de los bloques del gimnasio', () async {
     final slots = await repo.fetchSlots(monday);
     for (final s in slots) {

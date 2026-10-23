@@ -48,14 +48,15 @@ class _FakeSession extends AdminSession {
 void main() {
   setUpAll(() => initializeDateFormatting('es'));
 
-  group('WhatsApp', () {
-    test('agrega código de país y 9 para celulares de Argentina', () {
-      expect(whatsappNumber('11 2345 6789'), '5491123456789');
-      expect(whatsappNumber('011 2345-6789'), '5491123456789');
+  group('WhatsApp (Uruguay)', () {
+    test('celular local: quita el 0 y agrega 598', () {
+      expect(whatsappNumber('099 123 456'), '59899123456');
+      expect(whatsappNumber('094-555-777'), '59894555777');
     });
-    test('respeta números internacionales', () {
-      expect(whatsappNumber('+54 9 11 2345 6789'), '5491123456789');
+    test('respeta números con prefijo internacional', () {
       expect(whatsappNumber('+598 99 123 456'), '59899123456');
+      expect(whatsappNumber('+54 9 11 2345 6789'), '5491123456789');
+      expect(whatsappNumber('598 99 123 456'), '59899123456');
     });
     test('sin número', () {
       expect(whatsappNumber(null), isNull);

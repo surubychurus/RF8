@@ -184,7 +184,7 @@ class _TurnosScreenState extends State<TurnosScreen> {
             const SizedBox(height: 8),
             Text(
               'Turnos de 1h 30m · ${GymConfig.slotCapacity} personas por turno\n'
-              'Horarios: ${GymConfig.openingBlocks.join(' · ')}',
+              '${GymConfig.openingHours}',
               textAlign: TextAlign.center,
               style: const TextStyle(color: Brand.textSecondary, fontSize: 12),
             ),

@@ -16,5 +16,5 @@ class AppConfig {
   static const mediaBucket = 'media';
 
   /// Código de país para armar links de WhatsApp si el número no lo tiene.
-  static const defaultCountryCode = '54'; // Argentina
+  static const defaultCountryCode = '598'; // Uruguay
 }

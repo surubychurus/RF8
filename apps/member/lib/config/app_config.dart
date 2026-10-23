@@ -1,16 +1,28 @@
-/// Configuración de entorno. Se pasa con --dart-define al compilar:
+/// Configuración de entorno.
 ///
-///   flutter run \
-///     --dart-define=SUPABASE_URL=https://xxxx.supabase.co \
-///     --dart-define=SUPABASE_KEY=sb_publishable_...
+/// Por defecto la app se conecta al backend de RF8 en Supabase
+/// (proyecto archivo-natacion). Se puede pisar al compilar:
 ///
-/// Sin esos valores la app arranca en **modo demo** con datos en memoria.
+///   flutter run --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_KEY=...
+///
+/// Modo demo (datos en memoria, sin backend):
+///
+///   flutter run --dart-define=DEMO=true
 class AppConfig {
-  static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  /// Publishable key (o la anon key legacy) del proyecto.
-  static const supabaseKey = String.fromEnvironment('SUPABASE_KEY');
+  static const supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://pnamtuhhettqgkfugzik.supabase.co',
+  );
 
-  static bool get isDemo => supabaseUrl.isEmpty || supabaseKey.isEmpty;
+  /// Publishable key del proyecto. Es pública por diseño (los permisos los da RLS).
+  static const supabaseKey = String.fromEnvironment(
+    'SUPABASE_KEY',
+    defaultValue: 'sb_publishable_3-satDb7Co-YxlTscEPNgQ_ht_F19lE',
+  );
+
+  static const _demo = bool.fromEnvironment('DEMO');
+
+  static bool get isDemo => _demo || supabaseUrl.isEmpty || supabaseKey.isEmpty;
 
   /// Esquema propio para deep links (rf8gym://invite?token=...).
   static const deepLinkScheme = 'rf8gym';

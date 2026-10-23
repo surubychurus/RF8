@@ -46,15 +46,16 @@ Future<bool> confirm(BuildContext context, {required String title, required Stri
 }
 
 /// Número de WhatsApp en formato internacional (sólo dígitos).
+/// Sin prefijo internacional se asume Uruguay (+598).
 String? whatsappNumber(String? phone) {
   if (phone == null) return null;
   var digits = phone.replaceAll(RegExp(r'\D'), '');
   if (digits.isEmpty) return null;
   if (phone.trim().startsWith('+')) return digits;
+  // Uruguay: el celular local 099 123 456 es +598 99 123 456 (se quita el 0).
   digits = digits.replaceFirst(RegExp(r'^0+'), '');
   if (!digits.startsWith(AppConfig.defaultCountryCode)) {
-    // Argentina: celulares llevan 9 después del 54.
-    digits = '${AppConfig.defaultCountryCode}9$digits';
+    digits = '${AppConfig.defaultCountryCode}$digits';
   }
   return digits;
 }

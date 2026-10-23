@@ -10,8 +10,11 @@ class GymConfig {
   /// Cuántos días hacia adelante se puede reservar.
   static const bookingWindowDays = 7;
 
-  /// Bloques horarios (sólo informativo, la grilla real viene de `time_slots`).
-  static const openingBlocks = ['08:00 – 12:30', '13:30 – 16:30', '17:00 – 21:00'];
+  /// Horarios (sólo informativo, la grilla real viene de `time_slots`).
+  static const openingHours = 'Lun a vie: 08:00–12:30 · 13:30–16:30 · 17:00–21:00\nSábados: 08:00–12:30';
+
+  /// Zona horaria del gimnasio (Montevideo, Uruguay).
+  static const timeZone = 'America/Montevideo';
 
   /// Símbolo de moneda para los precios.
   static const currencySymbol = r'$';

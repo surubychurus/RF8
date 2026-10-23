@@ -61,8 +61,11 @@ class DemoGymRepository implements GymRepository {
     TimeSlot(id: 7, start: TimeOfDay(hour: 18, minute: 30), end: TimeOfDay(hour: 20, minute: 0), capacity: GymConfig.slotCapacity),
   ];
 
-  /// Lunes a sábado.
+  /// Lunes a viernes todo el día; sábados sólo a la mañana (08:00–12:30).
   static bool _isOpen(DateTime d) => d.weekday <= DateTime.saturday;
+
+  static bool _slotOpen(TimeSlot s, DateTime d) =>
+      d.weekday < DateTime.saturday || (d.weekday == DateTime.saturday && s.end.hour * 60 + s.end.minute <= 12 * 60 + 30);
 
   Profile get _me {
     final u = _users[_currentUsername];
@@ -192,7 +195,7 @@ class DemoGymRepository implements GymRepository {
     final d = DateUtils.dateOnly(date);
     if (!_isOpen(d)) return [];
     return [
-      for (final s in _slots)
+      for (final s in _slots.where((s) => _slotOpen(s, d)))
         SlotAvailability(
           slot: s,
           booked: min(
@@ -223,7 +226,7 @@ class DemoGymRepository implements GymRepository {
     if (d.isBefore(today) || d.isAfter(today.add(const Duration(days: GymConfig.bookingWindowDays)))) {
       throw const AppException('Sólo podés reservar desde hoy hasta 7 días adelante');
     }
-    if (!_isOpen(d)) throw const AppException('Ese turno no está disponible ese día');
+    if (!_isOpen(d) || !_slotOpen(slot, d)) throw const AppException('Ese turno no está disponible ese día');
     if (!slot.startOn(d).isAfter(_clock())) throw const AppException('Ese turno ya empezó');
     if (membership == null || !membership.isActiveOn(d)) {
       throw const AppException('No tenés un plan activo para esa fecha');
