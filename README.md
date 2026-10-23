@@ -4,12 +4,53 @@ App de socios de [RF8 Gimnasio](https://www.instagram.com/rf8.gimnasio) en Flutt
 
 ```
 apps/member/   App de socios (Flutter, Android + iOS)
+apps/admin/    App de administración (Flutter, Android + iOS) — roles Gym y Dueño
 supabase/      Base de datos, reglas de negocio y Edge Functions (invitaciones por Resend, login)
 hosting/       Página /invite de respaldo y archivos .well-known para App Links / Universal Links
+.github/       GitHub Actions: compila los APK de las dos apps
 ```
 
-> La app de administración (escaneo de QR, alta de socios) se agrega en `apps/admin/`.
-> El backend ya incluye lo que necesita: `public.check_in(payload)` y la función `send-invite`.
+Backend: proyecto de Supabase **archivo-natacion** (`pnamtuhhettqgkfugzik`). Ese proyecto
+también tiene tablas de otra app (`photos`, `albums`, `user_profiles`, `announcements`); RF8 no
+las toca (por eso el banner de RF8 usa la tabla `banners`).
+
+## App de administración
+
+| | Gym | Dueño |
+|---|:-:|:-:|
+| Validar turnos (escáner QR + validación manual) | ✅ | ✅ |
+| Ver turnos del día por horario | ✅ | ✅ |
+| Socios: alta por invitación (mail Resend), editar, activar/desactivar, notas | ✅ | ✅ |
+| Gestionar el plan del socio (asignar, renovar, editar, quitar) | ✅ | ✅ |
+| Ver y abrir el WhatsApp del socio | ✅ | ✅ |
+| Notificaciones a un socio | ✅ | ✅ |
+| Notificaciones globales (crear, editar, borrar) | | ✅ |
+| Banner superior (anuncios con imagen, enlace, fechas y orden) | | ✅ |
+| Enlaces (Instagram, WhatsApp, web…) | | ✅ |
+| Imágenes: subir, editar (rotar, espejar, recortar, tamaño, formato), renombrar, reemplazar, borrar | | ✅ |
+| Logo de la app de socios e íconos (imagen por variante, habilitar/deshabilitar) | | ✅ |
+| Precios y planes | | ✅ |
+| Equipo: cambiar roles · eliminar usuarios | | ✅ |
+
+Los permisos se aplican en la base (RLS + funciones), no sólo en la app.
+
+**Primer dueño:** crear su cuenta como cualquier socio (invitación) y después, en el SQL Editor:
+`update public.profiles set role = 'owner' where username = '<usuario>';`. Desde ahí, los
+demás roles se asignan desde la app (ficha del socio → Cambiar rol).
+
+**Íconos de la app:** la imagen que sube el dueño se ve enseguida en el selector de la app de
+socios. El ícono del teléfono es parte del instalable, así que se actualiza en la próxima
+compilación: GitHub Actions descarga esas imágenes y regenera los íconos nativos.
+
+## APK con GitHub Actions
+
+`.github/workflows/build-apk.yml` compila **los dos APK** en cada push a `main`/`claude/**`
+(y en PRs): analiza, corre los tests, toma los íconos personalizados y compila.
+
+- Descarga: pestaña **Actions** → la ejecución → **Artifacts** (`rf8-member-apk`, `rf8-admin-apk`).
+- Release: `git tag v1.0.0 && git push origin v1.0.0` crea un Release con los dos APK.
+- Están firmados con la clave debug (sirven para instalar). Para Play Store hay que configurar
+  una clave de firma propia.
 
 ## Flujo del socio
 
@@ -28,7 +69,10 @@ hosting/       Página /invite de respaldo y archivos .well-known para App Links
 |---|---|
 | **Turnos** | Reservar 1 turno por día, hasta 1/2/3/4 por semana según el plan. Cupo de 15 por turno de 1h 30m. Cancelar hasta que empiece. |
 | **GO** | Nombre completo arriba, **QR dinámico** en el medio (cambia cada 30 s) y el turno reservado debajo. Lo escanea el staff con la app de administración. |
-| **Mi cuenta** | Elegir el **ícono de la app** (6 variantes estilo Discord Nitro), datos personales, contraseña, PIN, biometría, plan y precios, cerrar sesión. |
+| **Mi cuenta** | Elegir el **ícono de la app** (6 variantes estilo Discord Nitro), datos personales, contraseña, PIN, biometría, plan y precios, enlaces, cerrar sesión. |
+
+Además: **banner superior** (en Turnos y GO) y **notificaciones** (campana con contador, en tiempo
+real), todo gestionado desde la app de administración.
 
 ### Planes
 Mensuales, de 2 tipos — **Rutina normal** y **Seguimiento** — de 1 a 4 días por semana.
@@ -51,14 +95,14 @@ Bloques: 08:00–12:30, 13:30–16:30, 17:00–21:00. Turnos de 1h 30m (tabla `t
 |---|---|
 | Logo | `apps/member/assets/branding/logo.png` (si no existe se muestra "RF8") |
 | Tipografías | `apps/member/assets/fonts/` + bloque `fonts:` en `pubspec.yaml` + `Brand.displayFont/bodyFont` |
-| Colores | `apps/member/lib/theme/brand.dart` |
+| Colores | `apps/member/lib/theme/brand.dart` y `apps/admin/lib/theme/brand.dart` (todos PLACEHOLDER) |
 | Íconos de la app | `apps/member/tool/generate_icons.py` (genera Android, iOS y vistas previas) |
 | Mail de invitación | `supabase/functions/send-invite/index.ts` (`inviteHtml`) |
 | Dominio | `app.rf8.com.ar` / `no-reply@rf8.com.ar` (ver abajo) |
 
 ## Puesta en marcha
 
-### 1. Probar la app sin backend (modo demo)
+### 1. Probar la app de socios sin backend (modo demo)
 
 ```bash
 cd apps/member
@@ -70,6 +114,17 @@ Usuario `demo` / clave `demo1234`, o "Tengo una invitación" con el código `DEM
 
 ### 2. Backend (Supabase)
 
+Ya está aplicado y desplegado en **archivo-natacion** (migraciones + 5 Edge Functions).
+Falta sólo configurar Resend:
+
+```bash
+supabase secrets set --project-ref pnamtuhhettqgkfugzik \
+  RESEND_API_KEY=re_xxx RESEND_FROM="RF8 Gimnasio <no-reply@tu-dominio>" \
+  INVITE_URL_BASE=https://app.rf8.com.ar/invite
+```
+
+Para recrearlo en otro proyecto:
+
 ```bash
 supabase link --project-ref <ref>
 supabase db push                                   # tablas, RLS y reglas
@@ -79,16 +134,18 @@ supabase functions deploy send-invite
 supabase functions deploy invite-info --no-verify-jwt
 supabase functions deploy accept-invite --no-verify-jwt
 supabase functions deploy sign-in --no-verify-jwt
+supabase functions deploy delete-user
 ```
 
 - En **Auth → Providers → Email**: desactivar "Allow new users to sign up" (sólo por invitación).
 - En **Resend**: verificar el dominio de RF8 y usar un remitente de ese dominio en `RESEND_FROM`.
-- Primer admin: crear el usuario en Auth, insertar su fila en `profiles` con `role = 'admin'`.
-
-Correr la app contra Supabase:
+Correr las apps contra Supabase (la admin ya apunta a archivo-natacion por defecto):
 
 ```bash
-flutter run --dart-define=SUPABASE_URL=https://<ref>.supabase.co --dart-define=SUPABASE_KEY=<publishable key>
+cd apps/member && flutter run \
+  --dart-define=SUPABASE_URL=https://pnamtuhhettqgkfugzik.supabase.co \
+  --dart-define=SUPABASE_KEY=sb_publishable_3-satDb7Co-YxlTscEPNgQ_ht_F19lE
+cd apps/admin && flutter run
 ```
 
 ### 3. Links de invitación

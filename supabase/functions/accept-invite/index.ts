@@ -27,7 +27,7 @@ Deno.serve(handler(async (req) => {
     .eq("token_hash", tokenHash)
     .is("accepted_at", null)
     .gt("expires_at", new Date().toISOString())
-    .select("id, email, full_name, plan_id")
+    .select("id, email, full_name, phone, plan_id")
     .maybeSingle();
   if (!invite) return error("Invitación inválida, usada o vencida", 410);
 
@@ -59,6 +59,7 @@ Deno.serve(handler(async (req) => {
     username: cleanUsername,
     full_name: invite.full_name,
     email: invite.email,
+    phone: invite.phone,
   });
   if (profileError) {
     await admin.auth.admin.deleteUser(userId);

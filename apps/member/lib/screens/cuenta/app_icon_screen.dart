@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/app_icon_service.dart';
+import '../../services/branding_controller.dart';
 import '../../theme/brand.dart';
 import '../../widgets/common.dart';
 
@@ -47,6 +48,15 @@ class _AppIconScreenState extends State<AppIconScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final branding = context.watch<BrandingController>().value;
+    // El dueño puede deshabilitar variantes; el clásico y el actual siempre se ven.
+    final variants = AppIconVariant.all
+        .where((v) =>
+            branding.enabledIcons == null ||
+            branding.enabledIcons!.contains(v.id) ||
+            v.id == AppIconVariant.all.first.id ||
+            v.id == _current?.id)
+        .toList();
     return Scaffold(
       appBar: AppBar(title: const Text('Ícono de la app')),
       body: ListView(
@@ -85,7 +95,7 @@ class _AppIconScreenState extends State<AppIconScreen> {
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: AppIconVariant.all.length,
+            itemCount: variants.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               mainAxisSpacing: 16,
@@ -93,9 +103,10 @@ class _AppIconScreenState extends State<AppIconScreen> {
               childAspectRatio: 0.78,
             ),
             itemBuilder: (_, i) {
-              final v = AppIconVariant.all[i];
+              final v = variants[i];
               return _IconTile(
                 variant: v,
+                remoteUrl: branding.iconUrls[v.id],
                 selected: v.id == _current?.id,
                 loading: v.id == _changing,
                 onTap: () => _select(v),
@@ -116,9 +127,18 @@ class _AppIconScreenState extends State<AppIconScreen> {
 }
 
 class _IconTile extends StatelessWidget {
-  const _IconTile({required this.variant, required this.selected, required this.loading, required this.onTap});
+  const _IconTile({
+    required this.variant,
+    this.remoteUrl,
+    required this.selected,
+    required this.loading,
+    required this.onTap,
+  });
 
   final AppIconVariant variant;
+
+  /// Imagen subida por el dueño; si no hay, la que viene en la app.
+  final String? remoteUrl;
   final bool selected;
   final bool loading;
   final VoidCallback onTap;
@@ -144,7 +164,13 @@ class _IconTile extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
-                      child: Image.asset(variant.previewAsset, fit: BoxFit.cover),
+                      child: remoteUrl == null
+                          ? Image.asset(variant.previewAsset, fit: BoxFit.cover)
+                          : Image.network(
+                              remoteUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Image.asset(variant.previewAsset, fit: BoxFit.cover),
+                            ),
                     ),
                   ),
                 ),

@@ -162,3 +162,105 @@ class AppException implements Exception {
   @override
   String toString() => message;
 }
+
+/// Anuncio del banner superior (lo gestiona el dueño).
+class BannerItem {
+  const BannerItem({required this.id, required this.title, this.body, this.imageUrl, this.linkUrl});
+
+  final String id;
+  final String title;
+  final String? body;
+  final String? imageUrl;
+  final String? linkUrl;
+
+  factory BannerItem.fromJson(Map<String, dynamic> j) => BannerItem(
+        id: j['id'] as String,
+        title: j['title'] as String,
+        body: j['body'] as String?,
+        imageUrl: j['image_url'] as String?,
+        linkUrl: j['link_url'] as String?,
+      );
+}
+
+/// Enlace (Instagram, WhatsApp, web…).
+class AppLink {
+  const AppLink({required this.label, required this.url, required this.icon});
+
+  final String label;
+  final String url;
+  final String icon;
+
+  IconData get iconData => switch (icon) {
+        'instagram' => Icons.camera_alt_outlined,
+        'whatsapp' => Icons.chat_outlined,
+        'web' => Icons.language,
+        'mail' => Icons.mail_outline,
+        'map' => Icons.place_outlined,
+        _ => Icons.link,
+      };
+
+  factory AppLink.fromJson(Map<String, dynamic> j) =>
+      AppLink(label: j['label'] as String, url: j['url'] as String, icon: j['icon'] as String);
+}
+
+class AppNotification {
+  const AppNotification({
+    required this.id,
+    required this.title,
+    required this.body,
+    this.linkUrl,
+    required this.createdAt,
+    required this.isGlobal,
+    this.read = false,
+  });
+
+  final String id;
+  final String title;
+  final String body;
+  final String? linkUrl;
+  final DateTime createdAt;
+  final bool isGlobal;
+  final bool read;
+
+  AppNotification copyWith({bool? read}) => AppNotification(
+        id: id,
+        title: title,
+        body: body,
+        linkUrl: linkUrl,
+        createdAt: createdAt,
+        isGlobal: isGlobal,
+        read: read ?? this.read,
+      );
+
+  factory AppNotification.fromJson(Map<String, dynamic> j, {bool read = false}) => AppNotification(
+        id: j['id'] as String,
+        title: j['title'] as String,
+        body: j['body'] as String,
+        linkUrl: j['link_url'] as String?,
+        createdAt: DateTime.parse(j['created_at'] as String).toLocal(),
+        isGlobal: j['user_id'] == null,
+        read: read,
+      );
+}
+
+/// Marca configurable desde la app de administración.
+class RemoteBranding {
+  const RemoteBranding({this.logoUrl, this.iconUrls = const {}, this.enabledIcons});
+
+  final String? logoUrl;
+
+  /// Imagen personalizada de cada variante de ícono (id → URL).
+  final Map<String, String> iconUrls;
+
+  /// Variantes habilitadas; null = todas.
+  final List<String>? enabledIcons;
+
+  factory RemoteBranding.fromSettings(Map<String, dynamic> s) => RemoteBranding(
+        logoUrl: s['logo_url'] as String?,
+        iconUrls: {
+          for (final e in ((s['app_icons'] as Map?) ?? const {}).entries)
+            if (e.value is String) e.key as String: e.value as String,
+        },
+        enabledIcons: (s['enabled_icons'] as List?)?.cast<String>(),
+      );
+}

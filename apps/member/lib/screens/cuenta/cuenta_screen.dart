@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 
 import '../../config/gym_config.dart';
 import '../../services/app_icon_service.dart';
+import '../../services/branding_controller.dart';
 import '../../services/member_controller.dart';
 import '../../services/session_controller.dart';
 import '../../theme/brand.dart';
 import '../../widgets/common.dart';
+import '../../widgets/content_widgets.dart';
 import 'app_icon_screen.dart';
 import 'change_password_screen.dart';
 import 'change_pin_screen.dart';
@@ -85,7 +87,7 @@ class _CuentaScreenState extends State<CuentaScreen> {
     final m = member.membership;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mi cuenta')),
+      appBar: AppBar(title: const Text('Mi cuenta'), actions: const [NotificationsButton()]),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
         children: [
@@ -149,7 +151,7 @@ class _CuentaScreenState extends State<CuentaScreen> {
             child: _Tile(
               leading: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.asset(_icon.previewAsset, width: 32, height: 32),
+                child: _iconPreview(context, _icon, 32),
               ),
               title: 'Ícono de la app',
               subtitle: _icon.label,
@@ -192,6 +194,26 @@ class _CuentaScreenState extends State<CuentaScreen> {
             ),
           ),
 
+          // --- Enlaces (los carga el dueño) ------------------------------------
+          if (member.links.isNotEmpty) ...[
+            const SectionTitle('Enlaces'),
+            Card(
+              child: Column(
+                children: [
+                  for (final (i, l) in member.links.indexed) ...[
+                    if (i > 0) const Divider(),
+                    ListTile(
+                      leading: Icon(l.iconData),
+                      title: Text(l.label),
+                      trailing: const Icon(Icons.open_in_new, size: 18, color: Brand.textSecondary),
+                      onTap: () => openLink(context, l.url),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+
           // --- Cuenta -------------------------------------------------------
           const SectionTitle('Cuenta'),
           Card(
@@ -221,6 +243,14 @@ class _CuentaScreenState extends State<CuentaScreen> {
         ],
       ),
     );
+  }
+
+  static Widget _iconPreview(BuildContext context, AppIconVariant v, double size) {
+    final remote = context.watch<BrandingController>().value.iconUrls[v.id];
+    final local = Image.asset(v.previewAsset, width: size, height: size);
+    return remote == null
+        ? local
+        : Image.network(remote, width: size, height: size, fit: BoxFit.cover, errorBuilder: (_, _, _) => local);
   }
 
   static String _initials(String name) {

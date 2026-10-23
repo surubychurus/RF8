@@ -1,7 +1,7 @@
 // Envía la invitación por correo (Resend) para que el socio cree su usuario.
 // La llama la app de administración con el JWT de un usuario staff/admin.
 //
-// POST { email, full_name, plan_id? }
+// POST { email, full_name, phone?, plan_id? }
 import { error, handler, json } from "../_shared/http.ts";
 import { adminClient, userClient } from "../_shared/supabase.ts";
 import { randomToken, sha256 } from "../_shared/tokens.ts";
@@ -21,7 +21,7 @@ Deno.serve(handler(async (req) => {
   const { data: isStaff } = await caller.rpc("is_staff");
   if (!isStaff) return error("Sin permisos", 403);
 
-  const { email, full_name, plan_id } = await req.json();
+  const { email, full_name, phone, plan_id } = await req.json();
   const cleanEmail = String(email ?? "").trim().toLowerCase();
   const cleanName = String(full_name ?? "").trim();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) return error("Email inválido");
@@ -34,14 +34,15 @@ Deno.serve(handler(async (req) => {
 
   const token = randomToken();
   const expiresAt = new Date(Date.now() + INVITE_TTL_HOURS * 3600_000);
-  const { error: insertError } = await admin.from("invitations").insert({
+  const { data: invite, error: insertError } = await admin.from("invitations").insert({
     email: cleanEmail,
     full_name: cleanName,
+    phone: phone ? String(phone).trim() : null,
     plan_id: plan_id ?? null,
     token_hash: await sha256(token),
     expires_at: expiresAt.toISOString(),
     created_by: auth.user.id,
-  });
+  }).select("id").single();
   if (insertError) throw insertError;
 
   const link = `${INVITE_URL_BASE}?token=${encodeURIComponent(token)}`;
@@ -64,6 +65,7 @@ Deno.serve(handler(async (req) => {
   });
   if (!res.ok) {
     console.error("Resend error", res.status, await res.text());
+    await admin.from("invitations").delete().eq("id", invite.id);
     return error("No se pudo enviar el correo", 502);
   }
 

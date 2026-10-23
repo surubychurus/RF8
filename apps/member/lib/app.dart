@@ -10,6 +10,7 @@ import 'screens/auth/security_setup_screen.dart';
 import 'screens/home/home_shell.dart';
 import 'screens/lock/lock_screen.dart';
 import 'services/app_icon_service.dart';
+import 'services/branding_controller.dart';
 import 'services/member_controller.dart';
 import 'services/session_controller.dart';
 import 'theme/app_theme.dart';
@@ -28,6 +29,7 @@ class Rf8App extends StatelessWidget {
         Provider.value(value: repo),
         Provider.value(value: appIcons),
         ChangeNotifierProvider.value(value: session),
+        ChangeNotifierProvider(create: (_) => BrandingController(repo)..load()),
       ],
       child: MaterialApp(
         title: GymConfig.gymName,

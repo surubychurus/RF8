@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -179,6 +181,66 @@ class SupabaseGymRepository implements GymRepository {
   Future<void> cancelBooking(String bookingId) => _guard(() async {
         await _client.rpc('cancel_booking', params: {'p_booking_id': bookingId});
       });
+
+  @override
+  Future<RemoteBranding> fetchBranding() => _guard(() async {
+        final rows = await _client.from('app_settings').select('key, value');
+        return RemoteBranding.fromSettings({for (final r in rows) r['key'] as String: r['value']});
+      });
+
+  @override
+  Future<List<BannerItem>> fetchBanners() => _guard(() async {
+        // RLS ya filtra los activos y dentro de su fecha.
+        final rows = await _client.from('banners').select().order('sort_order').order('created_at');
+        return rows.map(BannerItem.fromJson).toList();
+      });
+
+  @override
+  Future<List<AppLink>> fetchLinks() => _guard(() async {
+        final rows = await _client.from('app_links').select().eq('active', true).order('sort_order');
+        return rows.map(AppLink.fromJson).toList();
+      });
+
+  @override
+  Future<List<AppNotification>> fetchNotifications() => _guard(() async {
+        final uid = _uid;
+        final results = await Future.wait([
+          _client
+              .from('notifications')
+              .select('id, user_id, title, body, link_url, created_at')
+              .or('user_id.is.null,user_id.eq.$uid')
+              .order('created_at', ascending: false)
+              .limit(50),
+          _client.from('notification_reads').select('notification_id').eq('user_id', uid),
+        ]);
+        final read = {for (final r in results[1]) r['notification_id'] as String};
+        return results[0].map((r) => AppNotification.fromJson(r, read: read.contains(r['id']))).toList();
+      });
+
+  @override
+  Future<void> markNotificationsRead(Iterable<String> ids) => _guard(() async {
+        final uid = _uid;
+        final rows = [for (final id in ids) {'notification_id': id, 'user_id': uid}];
+        if (rows.isEmpty) return;
+        await _client.from('notification_reads').upsert(rows, ignoreDuplicates: true);
+      });
+
+  RealtimeChannel? _channel;
+  final _notificationEvents = StreamController<void>.broadcast();
+
+  @override
+  Stream<void> get notificationEvents {
+    _channel ??= _client
+        .channel('rf8-notifications')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'notifications',
+          callback: (_) => _notificationEvents.add(null),
+        )
+        .subscribe();
+    return _notificationEvents.stream;
+  }
 
   /// Traduce errores de Supabase a [AppException] con mensajes legibles.
   Future<T> _guard<T>(Future<T> Function() body) async {

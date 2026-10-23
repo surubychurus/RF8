@@ -9,6 +9,7 @@ import '../../models/models.dart';
 import '../../services/member_controller.dart';
 import '../../services/qr_token.dart';
 import '../../theme/brand.dart';
+import '../../widgets/content_widgets.dart';
 
 /// Sección GO: nombre completo, QR de entrada y el turno reservado.
 /// El QR lo escanea el staff con la app de administración.
@@ -27,10 +28,13 @@ class GoScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: member.refreshBookings,
+          onRefresh: () => Future.wait([member.refreshBookings(), member.refreshContent()]),
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
             children: [
+              const Align(alignment: Alignment.centerRight, child: NotificationsButton()),
+              const BannerCarousel(),
+              const SizedBox(height: 16),
               const Text(
                 'GO',
                 textAlign: TextAlign.center,

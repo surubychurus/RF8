@@ -5,7 +5,7 @@
 --   * N turnos por semana (lunes a domingo) según el plan (1, 2, 3 o 4)
 --   * Planes mensuales de 2 tipos: rutina normal y seguimiento
 
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 -- ---------------------------------------------------------------------------
 -- Utilidades
@@ -97,7 +97,7 @@ create table public.bookings (
   date             date not null,
   status           public.booking_status not null default 'booked',
   -- Secreto para el QR dinámico (TOTP). Sólo lo ve el dueño del turno.
-  qr_secret        text not null default encode(gen_random_bytes(32), 'hex'),
+  qr_secret        text not null default encode(extensions.gen_random_bytes(32), 'hex'),
   created_at       timestamptz not null default now(),
   cancelled_at     timestamptz,
   checked_in_at    timestamptz,
@@ -376,7 +376,7 @@ begin
     raise exception 'Turno no encontrado' using errcode = 'P0001';
   end if;
 
-  v_expected := left(encode(hmac(v_id::text || ':' || v_step::text, v_row.qr_secret, 'sha256'), 'hex'), 16);
+  v_expected := left(encode(extensions.hmac(v_id::text || ':' || v_step::text, v_row.qr_secret, 'sha256'), 'hex'), 16);
   if v_expected <> lower(v_parts[5]) then
     raise exception 'QR inválido' using errcode = 'P0001';
   end if;

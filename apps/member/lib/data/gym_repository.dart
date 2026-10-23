@@ -36,4 +36,18 @@ abstract class GymRepository {
   Future<List<Booking>> fetchMyBookings(DateTime from, DateTime to);
   Future<void> book(int slotId, DateTime date);
   Future<void> cancelBooking(String bookingId);
+
+  // --- Contenido gestionado por el dueño -----------------------------------------
+
+  /// Logo e íconos. Se puede leer sin sesión (pantalla de login).
+  Future<RemoteBranding> fetchBranding();
+  Future<List<BannerItem>> fetchBanners();
+  Future<List<AppLink>> fetchLinks();
+
+  /// Notificaciones personales y globales, con su estado de lectura.
+  Future<List<AppNotification>> fetchNotifications();
+  Future<void> markNotificationsRead(Iterable<String> ids);
+
+  /// Emite cuando llega una notificación nueva (tiempo real).
+  Stream<void> get notificationEvents;
 }

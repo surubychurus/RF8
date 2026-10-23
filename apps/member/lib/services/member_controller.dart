@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../config/gym_config.dart';
@@ -6,9 +8,24 @@ import '../models/models.dart';
 
 /// Datos del socio compartidos por las 3 secciones (Turnos, GO, Mi cuenta).
 class MemberController extends ChangeNotifier {
-  MemberController(this.repo);
+  MemberController(this.repo) {
+    _sub = repo.notificationEvents.listen((_) => refreshNotifications());
+  }
 
   final GymRepository repo;
+  StreamSubscription<void>? _sub;
+
+  List<BannerItem> banners = const [];
+  List<AppLink> links = const [];
+  List<AppNotification> notifications = const [];
+
+  int get unreadCount => notifications.where((n) => !n.read).length;
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
 
   Profile? profile;
   Membership? membership;
@@ -47,6 +64,41 @@ class MemberController extends ChangeNotifier {
     } finally {
       loading = false;
       notifyListeners();
+    }
+    // Contenido secundario: si falla no bloquea la app.
+    await refreshContent();
+  }
+
+  Future<void> refreshContent() async {
+    try {
+      final r = await Future.wait([repo.fetchBanners(), repo.fetchLinks(), repo.fetchNotifications()]);
+      banners = r[0] as List<BannerItem>;
+      links = r[1] as List<AppLink>;
+      notifications = r[2] as List<AppNotification>;
+      notifyListeners();
+    } on AppException {
+      // Se reintenta en el próximo refresco.
+    }
+  }
+
+  Future<void> refreshNotifications() async {
+    try {
+      notifications = await repo.fetchNotifications();
+      notifyListeners();
+    } on AppException {
+      // idem
+    }
+  }
+
+  Future<void> markAllRead() async {
+    final unread = notifications.where((n) => !n.read).map((n) => n.id).toList();
+    if (unread.isEmpty) return;
+    notifications = [for (final n in notifications) n.copyWith(read: true)];
+    notifyListeners();
+    try {
+      await repo.markNotificationsRead(unread);
+    } on AppException {
+      // No es crítico.
     }
   }
 

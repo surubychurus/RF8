@@ -250,6 +250,60 @@ class DemoGymRepository implements GymRepository {
     ));
   }
 
+  final _readNotifications = <String>{};
+
+  @override
+  Future<RemoteBranding> fetchBranding() async => const RemoteBranding();
+
+  @override
+  Future<List<BannerItem>> fetchBanners() async => const [
+        BannerItem(
+          id: 'b1',
+          title: '¡Bienvenido a la app de RF8!',
+          body: 'Reservá tu turno y entrá con tu QR desde la sección GO.',
+        ),
+        BannerItem(
+          id: 'b2',
+          title: 'Seguinos en Instagram',
+          body: '@rf8.gimnasio',
+          linkUrl: 'https://www.instagram.com/rf8.gimnasio',
+        ),
+      ];
+
+  @override
+  Future<List<AppLink>> fetchLinks() async => const [
+        AppLink(label: 'Instagram', url: 'https://www.instagram.com/rf8.gimnasio', icon: 'instagram'),
+      ];
+
+  @override
+  Future<List<AppNotification>> fetchNotifications() async {
+    await _latency();
+    return [
+      AppNotification(
+        id: 'n1',
+        title: 'Horario especial',
+        body: 'El feriado abrimos de 9 a 13 h.',
+        createdAt: _clock().subtract(const Duration(hours: 3)),
+        isGlobal: true,
+        read: _readNotifications.contains('n1'),
+      ),
+      AppNotification(
+        id: 'n2',
+        title: 'Tu plan vence pronto',
+        body: 'Acercate a recepción para renovarlo.',
+        createdAt: _clock().subtract(const Duration(days: 1)),
+        isGlobal: false,
+        read: _readNotifications.contains('n2'),
+      ),
+    ];
+  }
+
+  @override
+  Future<void> markNotificationsRead(Iterable<String> ids) async => _readNotifications.addAll(ids);
+
+  @override
+  Stream<void> get notificationEvents => const Stream.empty();
+
   @override
   Future<void> cancelBooking(String bookingId) async {
     await _latency();

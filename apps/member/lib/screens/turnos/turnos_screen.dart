@@ -7,6 +7,7 @@ import '../../models/models.dart';
 import '../../services/member_controller.dart';
 import '../../theme/brand.dart';
 import '../../widgets/common.dart';
+import '../../widgets/content_widgets.dart';
 import '../cuenta/plans_screen.dart';
 
 /// Sección 1: reservar 1 turno por día, hasta N por semana según el plan.
@@ -50,7 +51,7 @@ class _TurnosScreenState extends State<TurnosScreen> {
 
   Future<void> _refresh() async {
     final member = context.read<MemberController>();
-    await Future.wait([member.refreshBookings(), _loadSlots()]);
+    await Future.wait([member.refreshBookings(), member.refreshContent(), _loadSlots()]);
   }
 
   Future<void> _book(SlotAvailability s) async {
@@ -120,12 +121,14 @@ class _TurnosScreenState extends State<TurnosScreen> {
     final planActive = membership?.isActiveOn(_day) ?? false;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Turnos')),
+      appBar: AppBar(title: const Text('Turnos'), actions: const [NotificationsButton()]),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
           children: [
+            const BannerCarousel(),
+            const SizedBox(height: 12),
             _PlanSummary(membership: membership, used: used, quota: quota),
             const SizedBox(height: 16),
             SizedBox(

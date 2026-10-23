@@ -1,0 +1,103 @@
+# Compila los APK de Android de las dos apps (socios y administración).
+#
+# Los APK quedan como "artifacts" de cada ejecución (pestaña Actions → la
+# ejecución → Artifacts). Si se pushea un tag v* (ej. v1.0.0) además se crea un
+# Release de GitHub con los dos APK adjuntos.
+#
+# Configuración opcional (Settings → Secrets and variables → Actions → Variables):
+#   SUPABASE_URL / SUPABASE_KEY  para apuntar a otro proyecto de Supabase.
+# Los APK se firman con la clave debug de Flutter: sirven para instalar y probar,
+# para Play Store hace falta configurar una clave de firma propia.
+name: Compilar APK
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    tags: ["v*"]
+    paths:
+      - "apps/**"
+      - ".github/workflows/build-apk.yml"
+  pull_request:
+    paths:
+      - "apps/**"
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: "3.47.7"
+  SUPABASE_URL: ${{ vars.SUPABASE_URL || 'https://pnamtuhhettqgkfugzik.supabase.co' }}
+  # Publishable key: es pública por diseño (los permisos los aplica RLS).
+  SUPABASE_KEY: ${{ vars.SUPABASE_KEY || 'sb_publishable_3-satDb7Co-YxlTscEPNgQ_ht_F19lE' }}
+
+jobs:
+  apk:
+    name: APK ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [member, admin]
+    defaults:
+      run:
+        working-directory: apps/${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Dependencias
+        run: flutter pub get
+
+      - name: Análisis
+        run: flutter analyze
+
+      - name: Tests
+        run: flutter test
+
+      # Íconos que el dueño subió desde la app de administración (Logo e íconos).
+      - name: Íconos personalizados
+        if: matrix.app == 'member'
+        run: |
+          pip install --quiet pillow
+          python3 tool/fetch_remote_icons.py build/remote_icons
+          python3 tool/generate_icons.py build/remote_icons
+
+      - name: Compilar APK
+        run: |
+          flutter build apk --release \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_KEY="$SUPABASE_KEY"
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/rf8-${{ matrix.app }}-${GITHUB_SHA::7}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rf8-${{ matrix.app }}-apk
+          path: apps/${{ matrix.app }}/dist/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: apk
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.apk
+          generate_release_notes: true
