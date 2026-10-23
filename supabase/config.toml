@@ -1,0 +1,20 @@
+# Configuración local de Supabase CLI (supabase start / supabase functions serve).
+project_id = "rf8"
+
+[auth]
+site_url = "https://app.rf8.com.ar"
+# Los socios no se registran solos: sólo por invitación.
+enable_signup = false
+
+[auth.email]
+enable_signup = false
+
+# Estas funciones se llaman antes de tener sesión.
+[functions.invite-info]
+verify_jwt = false
+
+[functions.accept-invite]
+verify_jwt = false
+
+[functions.sign-in]
+verify_jwt = false

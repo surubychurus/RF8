@@ -1,0 +1,43 @@
+<!doctype html>
+<!--
+  Página de respaldo para https://app.rf8.com.ar/invite?token=...
+  Si la app está instalada y los App Links / Universal Links están
+  configurados, el sistema abre la app directamente y esta página no se ve.
+  Si no, intenta abrir la app por su esquema propio y muestra el código.
+-->
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RF8 · Invitación</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0B0B0C;
+           color: #F5F5F5; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    main { max-width: 420px; padding: 32px 16px; text-align: center; }
+    .logo { font-size: 48px; font-weight: 900; letter-spacing: 4px; color: #E10600; }
+    a.btn { display: block; margin: 24px 0; padding: 14px; border-radius: 12px; background: #E10600;
+            color: #fff; font-weight: 700; text-decoration: none; }
+    code { display: block; padding: 12px; border-radius: 8px; background: #16161A; word-break: break-all; }
+    p { color: #9A9AA2; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="logo">RF8</div>
+    <h1>Activá tu cuenta</h1>
+    <a class="btn" id="open" href="#">Abrir la app RF8</a>
+    <p>¿No se abrió? Instalá la app, tocá <b>"Tengo una invitación"</b> y pegá este código:</p>
+    <code id="code"></code>
+    <!-- PLACEHOLDER: links a las tiendas -->
+    <p><a href="#" style="color:#F5F5F5">App Store</a> · <a href="#" style="color:#F5F5F5">Google Play</a></p>
+  </main>
+  <script>
+    const token = new URLSearchParams(location.search).get('token') || '';
+    document.getElementById('code').textContent = token;
+    const deep = 'rf8gym://invite?token=' + encodeURIComponent(token);
+    document.getElementById('open').href = deep;
+    if (token) location.href = deep;
+  </script>
+</body>
+</html>

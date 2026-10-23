@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TEAMID.ar.rf8.rf8App"],
+        "components": [{ "/": "/invite*" }]
+      }
+    ]
+  }
+}
