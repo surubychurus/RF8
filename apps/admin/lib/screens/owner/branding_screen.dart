@@ -112,7 +112,10 @@ class _BrandingScreenState extends State<BrandingScreen> {
                       contentPadding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
                       leading: _Thumb(url: icons[e.key] as String?, fallback: e.value[0], size: 52),
                       title: Text(e.value),
-                      subtitle: Text(icons[e.key] == null ? 'Imagen original' : 'Imagen personalizada'),
+                      subtitle: Text([
+                        icons[e.key] == null ? 'Imagen original' : 'Imagen personalizada',
+                        if (e.key == 'Default') 'siempre disponible',
+                      ].join(' · ')),
                       onTap: () => _changeIcon(icons, e.key),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
