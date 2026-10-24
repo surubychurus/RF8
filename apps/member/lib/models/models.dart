@@ -147,9 +147,10 @@ class Booking {
 }
 
 class InviteInfo {
-  const InviteInfo({required this.email, required this.fullName, required this.expiresAt});
+  const InviteInfo({this.email, required this.fullName, required this.expiresAt});
 
-  final String email;
+  /// null si el gimnasio no lo cargó: el socio lo completa al crear su usuario.
+  final String? email;
   final String fullName;
   final DateTime expiresAt;
 }

@@ -133,7 +133,7 @@ class Member {
 class Invitation {
   const Invitation({
     required this.id,
-    required this.email,
+    this.email,
     required this.fullName,
     this.phone,
     required this.expiresAt,
@@ -141,7 +141,9 @@ class Invitation {
   });
 
   final String id;
-  final String email;
+
+  /// Opcional: si no se carga, el socio lo completa al crear su usuario.
+  final String? email;
   final String fullName;
   final String? phone;
   final DateTime expiresAt;
@@ -151,11 +153,26 @@ class Invitation {
 
   factory Invitation.fromJson(Map<String, dynamic> j) => Invitation(
         id: j['id'] as String,
-        email: j['email'] as String,
+        email: j['email'] as String?,
         fullName: j['full_name'] as String,
         phone: j['phone'] as String?,
         expiresAt: DateTime.parse(j['expires_at'] as String),
         acceptedAt: j['accepted_at'] == null ? null : DateTime.parse(j['accepted_at'] as String),
+      );
+}
+
+/// Código de invitación recién generado (sólo se puede ver en ese momento).
+class InviteCode {
+  const InviteCode({required this.code, required this.invitationId, required this.expiresAt});
+
+  final String code;
+  final String invitationId;
+  final DateTime expiresAt;
+
+  factory InviteCode.fromJson(Map<String, dynamic> j) => InviteCode(
+        code: j['code'] as String,
+        invitationId: j['invitation_id'] as String,
+        expiresAt: DateTime.parse(j['expires_at'] as String).toLocal(),
       );
 }
 

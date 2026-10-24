@@ -1,10 +1,11 @@
 // Devuelve los datos de una invitación válida (para mostrar en la app).
+// email puede ser null: en ese caso el socio lo completa al crear su usuario.
 // Pública: se llama antes de que exista el usuario.
 //
 // POST { token }
 import { error, handler, json } from "../_shared/http.ts";
 import { adminClient } from "../_shared/supabase.ts";
-import { sha256 } from "../_shared/tokens.ts";
+import { normalizeToken, sha256 } from "../_shared/tokens.ts";
 
 Deno.serve(handler(async (req) => {
   const { token } = await req.json();
@@ -13,7 +14,7 @@ Deno.serve(handler(async (req) => {
   const { data: invite } = await adminClient()
     .from("invitations")
     .select("email, full_name, expires_at, accepted_at")
-    .eq("token_hash", await sha256(String(token).trim()))
+    .eq("token_hash", await sha256(normalizeToken(token)))
     .maybeSingle();
 
   if (!invite) return error("Invitación inválida", 404);

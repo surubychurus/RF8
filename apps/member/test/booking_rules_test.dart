@@ -88,4 +88,16 @@ void main() {
       expect(inBlock, isTrue, reason: s.slot.label);
     }
   });
+
+  test('invitación sin email: el socio lo completa al crear su usuario', () async {
+    final r = DemoGymRepository();
+    final invite = await r.getInvite('demo');
+    expect(invite.email, isNull);
+    expect(
+      () => r.acceptInvite(token: 'DEMO', username: 'nuevo.socio', password: 'clave-123'),
+      throwsA(isA<AppException>().having((e) => e.message, 'message', contains('email'))),
+    );
+    await r.acceptInvite(token: 'DEMO', username: 'nuevo.socio', password: 'clave-123', email: 'Nuevo@Mail.com');
+    expect((await r.fetchProfile()).email, 'nuevo@mail.com');
+  });
 }

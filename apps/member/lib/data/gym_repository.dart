@@ -14,7 +14,7 @@ abstract class GymRepository {
   Future<void> signIn(String usernameOrEmail, String password);
   Future<void> signOut();
 
-  /// Datos de una invitación recibida por correo.
+  /// Datos de una invitación (código que da el gimnasio).
   Future<InviteInfo> getInvite(String token);
 
   /// Crea el usuario a partir de la invitación y deja la sesión iniciada.
@@ -22,6 +22,7 @@ abstract class GymRepository {
     required String token,
     required String username,
     required String password,
+    String? email,
   });
 
   Future<Profile> fetchProfile();

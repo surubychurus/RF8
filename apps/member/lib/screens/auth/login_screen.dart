@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Center(child: BrandLogo(size: 112)),
+                    const Center(child: BrandLogo.full(size: 300)),
                     const SizedBox(height: 24),
                     Text(
                       'Bienvenido a RF8',
@@ -117,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 24),
                     const Text(
-                      '¿Todavía no sos socio? Acercate al gimnasio y te enviamos la invitación a tu correo.',
+                      '¿Todavía no sos socio? Acercate al gimnasio y te damos tu código de invitación.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Brand.textSecondary, fontSize: 13),
                     ),

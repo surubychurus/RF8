@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
 
-/// Colores de la app de administración.
-///
-/// PLACEHOLDERS: todos los colores se ajustan acá cuando estén los definitivos.
+/// Colores de la app de administración (los del logo de RF8).
 class Brand {
-  static const primary = Color(0xFF7A7A85); // PLACEHOLDER color principal
-  static const onPrimary = Colors.white; // PLACEHOLDER
-  static const background = Color(0xFF101014); // PLACEHOLDER
-  static const surface = Color(0xFF1A1A20); // PLACEHOLDER
-  static const surfaceHigh = Color(0xFF24242C); // PLACEHOLDER
-  static const outline = Color(0xFF30303A); // PLACEHOLDER
-  static const textPrimary = Color(0xFFF2F2F2); // PLACEHOLDER
-  static const textSecondary = Color(0xFF9A9AA2); // PLACEHOLDER
-  static const success = Color(0xFF2ECC71); // PLACEHOLDER
-  static const warning = Color(0xFFF5A623); // PLACEHOLDER
-  static const danger = Color(0xFFE5484D); // PLACEHOLDER
+  static const orange = Color(0xFFEE6E31); // naranja del logo
+  static const navy = Color(0xFF101A33); // azul marino del logo
+
+  static const primary = orange;
+  static const onPrimary = Colors.white;
+  static const background = navy;
+  static const surface = Color(0xFF18233F);
+  static const surfaceHigh = Color(0xFF22305A);
+  static const outline = Color(0xFF2E3D66);
+  static const textPrimary = Color(0xFFF5F6FA);
+  static const textSecondary = Color(0xFF9AA4BF);
+  static const success = Color(0xFF2ECC71);
+  static const warning = Color(0xFFF5C33B);
+  static const danger = Color(0xFFE5484D);
   static const whatsapp = Color(0xFF25D366);
 
   /// PLACEHOLDER tipografías (ver assets/fonts y pubspec.yaml).
   static const String? displayFont = null;
   static const String? bodyFont = null;
+
+  static const logoAsset = 'assets/branding/logo.png';
+  static const logoFullAsset = 'assets/branding/logo_full.png';
 }

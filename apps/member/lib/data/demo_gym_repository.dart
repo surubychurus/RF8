@@ -116,7 +116,6 @@ class DemoGymRepository implements GymRepository {
     }
     if (_inviteUsed) throw const AppException('Esta invitación ya fue usada');
     return InviteInfo(
-      email: 'nuevo@rf8.com.ar',
       fullName: 'Nuevo Socio',
       expiresAt: _clock().add(const Duration(hours: 72)),
     );
@@ -127,8 +126,13 @@ class DemoGymRepository implements GymRepository {
     required String token,
     required String username,
     required String password,
+    String? email,
   }) async {
     final invite = await getInvite(token);
+    final mail = invite.email ?? email?.trim().toLowerCase() ?? '';
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(mail)) {
+      throw const AppException('Ingresá un email válido');
+    }
     final u = username.trim().toLowerCase();
     if (!RegExp(r'^[a-z0-9._]{3,20}$').hasMatch(u)) {
       throw const AppException(
@@ -138,7 +142,7 @@ class DemoGymRepository implements GymRepository {
     if (_users.containsKey(u)) throw const AppException('Ese usuario ya existe, probá con otro');
     _users[u] = (
       password: password,
-      profile: Profile(id: 'u-$u', username: u, fullName: invite.fullName, email: invite.email),
+      profile: Profile(id: 'u-$u', username: u, fullName: invite.fullName, email: mail),
     );
     _inviteUsed = true;
     await signIn(u, password);

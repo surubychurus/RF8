@@ -67,7 +67,7 @@ class _AppIconScreenState extends State<AppIconScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               gradient: const LinearGradient(
-                colors: [Color(0xFF5B0A91), Brand.primary],
+                colors: [Brand.surfaceHigh, Brand.primary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),

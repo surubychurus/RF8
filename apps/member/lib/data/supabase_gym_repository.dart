@@ -48,7 +48,7 @@ class SupabaseGymRepository implements GymRepository {
         final res = await _client.functions.invoke('invite-info', body: {'token': token});
         final j = res.data as Map<String, dynamic>;
         return InviteInfo(
-          email: j['email'] as String,
+          email: j['email'] as String?,
           fullName: j['full_name'] as String,
           expiresAt: DateTime.parse(j['expires_at'] as String),
         );
@@ -59,12 +59,14 @@ class SupabaseGymRepository implements GymRepository {
     required String token,
     required String username,
     required String password,
+    String? email,
   }) =>
       _guard(() async {
         await _client.functions.invoke('accept-invite', body: {
           'token': token,
           'username': username,
           'password': password,
+          'email': ?email,
         });
         await signIn(username, password);
       });
@@ -106,7 +108,7 @@ class SupabaseGymRepository implements GymRepository {
             .select('starts_on, ends_on, plans(*)')
             .eq('user_id', _uid)
             .gte('ends_on', _date.format(DateTime.now()))
-            .order('starts_on')
+            .order('starts_on', ascending: true)
             .limit(1)
             .maybeSingle();
         if (row == null) return null;
@@ -123,8 +125,8 @@ class SupabaseGymRepository implements GymRepository {
             .from('plans')
             .select()
             .eq('active', true)
-            .order('kind')
-            .order('days_per_week');
+            .order('kind', ascending: true)
+            .order('days_per_week', ascending: true);
         return rows.map(Plan.fromJson).toList();
       });
 
@@ -154,7 +156,7 @@ class SupabaseGymRepository implements GymRepository {
             .neq('status', 'cancelled')
             .gte('date', _date.format(from))
             .lte('date', _date.format(to))
-            .order('date');
+            .order('date', ascending: true);
         return rows.map((r) {
           final s = r['time_slots'] as Map<String, dynamic>;
           return Booking(
@@ -191,13 +193,13 @@ class SupabaseGymRepository implements GymRepository {
   @override
   Future<List<BannerItem>> fetchBanners() => _guard(() async {
         // RLS ya filtra los activos y dentro de su fecha.
-        final rows = await _client.from('banners').select().order('sort_order').order('created_at');
+        final rows = await _client.from('banners').select().order('sort_order', ascending: true).order('created_at', ascending: true);
         return rows.map(BannerItem.fromJson).toList();
       });
 
   @override
   Future<List<AppLink>> fetchLinks() => _guard(() async {
-        final rows = await _client.from('app_links').select().eq('active', true).order('sort_order');
+        final rows = await _client.from('app_links').select().eq('active', true).order('sort_order', ascending: true);
         return rows.map(AppLink.fromJson).toList();
       });
 

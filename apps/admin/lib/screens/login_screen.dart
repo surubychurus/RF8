@@ -56,20 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Center(
-                    child: Container(
-                      width: 96,
-                      height: 96,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Brand.surface,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: Brand.primary, width: 2),
-                      ),
-                      // PLACEHOLDER logo
-                      child: const Text('RF8', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900)),
-                    ),
-                  ),
+                  Center(child: Image.asset(Brand.logoFullAsset, width: 300)),
                   const SizedBox(height: 24),
                   Text('Administración', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
                   const SizedBox(height: 8),

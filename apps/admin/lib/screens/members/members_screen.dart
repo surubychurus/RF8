@@ -8,6 +8,7 @@ import '../../data/admin_api.dart';
 import '../../data/models.dart';
 import '../../theme/brand.dart';
 import '../../widgets/common.dart';
+import '../../widgets/invite_code_sheet.dart';
 import 'member_detail_screen.dart';
 import 'new_member_screen.dart';
 
@@ -185,29 +186,24 @@ class _InviteTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final api = context.read<AdminApi>();
+    final contact = invite.phone ?? invite.email ?? 'Sin contacto';
     return ListTile(
-      leading: const Icon(Icons.mail_outline),
+      leading: const Icon(Icons.key_outlined),
       title: Text(invite.fullName),
       subtitle: Text(
         invite.expired
-            ? '${invite.email} · vencida'
-            : '${invite.email} · vence ${DateFormat('dd/MM HH:mm').format(invite.expiresAt.toLocal())}',
+            ? '$contact · código vencido'
+            : '$contact · vence ${DateFormat('dd/MM HH:mm').format(invite.expiresAt.toLocal())}',
       ),
       trailing: PopupMenuButton<String>(
         onSelected: (v) async {
-          if (v == 'resend') {
-            final ok = await runGuarded(
-              context,
-              () async {
-                await api.inviteMember(fullName: invite.fullName, email: invite.email, phone: invite.phone);
-                await api.deleteInvitation(invite.id);
-              },
-              success: 'Invitación reenviada',
-            );
-            if (ok) onChanged();
-          } else if (v == 'whatsapp') {
-            await openWhatsApp(context, invite.phone,
-                text: 'Hola ${invite.fullName.split(' ').first}! Te enviamos un mail de RF8 para crear tu usuario.');
+          if (v == 'code') {
+            InviteCode? code;
+            await runGuarded(context, () async => code = await api.regenerateInviteCode(invite.id));
+            final created = code;
+            if (created == null || !context.mounted) return;
+            await showInviteCode(context, invite: created, fullName: invite.fullName, phone: invite.phone);
+            onChanged();
           } else if (v == 'delete') {
             if (await runGuarded(context, () => api.deleteInvitation(invite.id), success: 'Invitación eliminada')) {
               onChanged();
@@ -215,8 +211,7 @@ class _InviteTile extends StatelessWidget {
           }
         },
         itemBuilder: (_) => const [
-          PopupMenuItem(value: 'resend', child: Text('Reenviar mail')),
-          PopupMenuItem(value: 'whatsapp', child: Text('Avisar por WhatsApp')),
+          PopupMenuItem(value: 'code', child: Text('Generar nuevo código')),
           PopupMenuItem(value: 'delete', child: Text('Eliminar invitación')),
         ],
       ),

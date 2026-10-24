@@ -8,7 +8,7 @@ import '../../theme/brand.dart';
 import '../../widgets/brand_logo.dart';
 import '../../widgets/common.dart';
 
-/// Crear usuario a partir del link/código recibido por correo.
+/// Crear usuario con el código de invitación que da el gimnasio.
 class InviteScreen extends StatefulWidget {
   const InviteScreen({super.key, this.token});
 
@@ -25,6 +25,7 @@ class _InviteScreenState extends State<InviteScreen> {
   final _user = TextEditingController();
   final _pass = TextEditingController();
   final _pass2 = TextEditingController();
+  final _email = TextEditingController();
 
   String? _token;
   InviteInfo? _invite;
@@ -42,7 +43,7 @@ class _InviteScreenState extends State<InviteScreen> {
 
   @override
   void dispose() {
-    for (final c in [_code, _user, _pass, _pass2]) {
+    for (final c in [_code, _user, _pass, _pass2, _email]) {
       c.dispose();
     }
     super.dispose();
@@ -77,7 +78,12 @@ class _InviteScreenState extends State<InviteScreen> {
     final session = context.read<SessionController>();
     final nav = Navigator.of(context);
     try {
-      await session.acceptInvite(token: _token!, username: _user.text, password: _pass.text);
+      await session.acceptInvite(
+        token: _token!,
+        username: _user.text,
+        password: _pass.text,
+        email: _invite?.email == null ? _email.text.trim() : null,
+      );
       // La raíz pasa a "configurar seguridad": cerramos esta pantalla.
       nav.popUntil((r) => r.isFirst);
     } on AppException catch (e) {
@@ -122,13 +128,14 @@ class _InviteScreenState extends State<InviteScreen> {
           Text('Activá tu cuenta', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 8),
           const Text(
-            'Abrí el link del correo que te enviamos desde RF8, o pegá acá el código que figura en el mail.',
+            'Ingresá el código de invitación que te dio el gimnasio (por ejemplo RF8-AB12-CD34).',
             style: TextStyle(color: Brand.textSecondary),
           ),
           const SizedBox(height: 24),
           TextField(
             controller: _code,
             autocorrect: false,
+            textCapitalization: TextCapitalization.characters,
             decoration: const InputDecoration(
               labelText: 'Código de invitación',
               prefixIcon: Icon(Icons.key_outlined),
@@ -153,10 +160,29 @@ class _InviteScreenState extends State<InviteScreen> {
                 style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
             Text(
-              'Creá tu usuario y contraseña para ${invite.email}',
+              invite.email == null
+                  ? 'Completá tus datos para crear tu cuenta de RF8'
+                  : 'Creá tu usuario y contraseña para ${invite.email}',
               style: const TextStyle(color: Brand.textSecondary),
             ),
             const SizedBox(height: 24),
+            if (invite.email == null) ...[
+              TextFormField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.email],
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  helperText: 'Para recuperar tu cuenta si olvidás la contraseña',
+                  prefixIcon: Icon(Icons.mail_outline),
+                ),
+                validator: (v) =>
+                    RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch((v ?? '').trim()) ? null : 'Email inválido',
+              ),
+              const SizedBox(height: 16),
+            ],
             TextFormField(
               controller: _user,
               autocorrect: false,

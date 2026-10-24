@@ -84,7 +84,7 @@ class AdminApi {
       });
 
   Future<List<TimeSlot>> slots() => _guard(() async {
-        final rows = await _client.from('time_slots').select().eq('active', true).order('starts_at');
+        final rows = await _client.from('time_slots').select().eq('active', true).order('starts_at', ascending: true);
         return rows.map(TimeSlot.fromJson).toList();
       });
 
@@ -96,7 +96,7 @@ class AdminApi {
         if (s.isNotEmpty) {
           q = q.or('full_name.ilike.%$s%,username.ilike.%$s%,email.ilike.%$s%,phone.ilike.%$s%');
         }
-        final rows = await q.order('full_name').limit(200);
+        final rows = await q.order('full_name', ascending: true).limit(200);
         return rows.map(Member.fromJson).toList();
       });
 
@@ -113,13 +113,23 @@ class AdminApi {
             'active': ?active,
           }).eq('id', id));
 
-  Future<void> inviteMember({required String fullName, required String email, String? phone, String? planId}) =>
-      _guard(() => _client.functions.invoke('send-invite', body: {
-            'full_name': fullName,
-            'email': email,
-            'phone': phone,
-            'plan_id': planId,
-          }));
+  /// Crea la invitación y devuelve el código para pasarle al socio.
+  Future<InviteCode> inviteMember({required String fullName, String? email, String? phone, String? planId}) =>
+      _guard(() async {
+        final res = await _client.functions.invoke('create-invite', body: {
+          'full_name': fullName,
+          'email': ?email,
+          'phone': ?phone,
+          'plan_id': ?planId,
+        });
+        return InviteCode.fromJson(res.data as Map<String, dynamic>);
+      });
+
+  /// Genera un código nuevo para una invitación pendiente (el anterior deja de servir).
+  Future<InviteCode> regenerateInviteCode(String invitationId) => _guard(() async {
+        final res = await _client.functions.invoke('create-invite', body: {'invitation_id': invitationId});
+        return InviteCode.fromJson(res.data as Map<String, dynamic>);
+      });
 
   Future<List<Invitation>> pendingInvitations() => _guard(() async {
         final rows = await _client
@@ -144,7 +154,7 @@ class AdminApi {
   Future<List<Plan>> plans({bool onlyActive = false}) => _guard(() async {
         var q = _client.from('plans').select();
         if (onlyActive) q = q.eq('active', true);
-        final rows = await q.order('kind').order('days_per_week');
+        final rows = await q.order('kind', ascending: true).order('days_per_week', ascending: true);
         return rows.map(Plan.fromJson).toList();
       });
 
@@ -207,7 +217,7 @@ class AdminApi {
   // --- Banner y enlaces -------------------------------------------------------------
 
   Future<List<Announcement>> announcements() => _guard(() async {
-        final rows = await _client.from('banners').select().order('sort_order').order('created_at');
+        final rows = await _client.from('banners').select().order('sort_order', ascending: true).order('created_at', ascending: true);
         return rows.map(Announcement.fromJson).toList();
       });
 
@@ -222,7 +232,7 @@ class AdminApi {
   Future<void> deleteAnnouncement(String id) => _guard(() => _client.from('banners').delete().eq('id', id));
 
   Future<List<AppLink>> links() => _guard(() async {
-        final rows = await _client.from('app_links').select().order('sort_order').order('created_at');
+        final rows = await _client.from('app_links').select().order('sort_order', ascending: true).order('created_at', ascending: true);
         return rows.map(AppLink.fromJson).toList();
       });
 

@@ -98,8 +98,9 @@ class SessionController extends ChangeNotifier with WidgetsBindingObserver {
     required String token,
     required String username,
     required String password,
+    String? email,
   }) async {
-    await repo.acceptInvite(token: token, username: username, password: password);
+    await repo.acceptInvite(token: token, username: username, password: password, email: email);
     _pendingInvite = null;
     _unlocked = true;
     await _evaluate();

@@ -8,6 +8,7 @@ import 'package:rf8_admin/data/session.dart';
 import 'package:rf8_admin/screens/home_shell.dart';
 import 'package:rf8_admin/theme/app_theme.dart';
 import 'package:rf8_admin/widgets/common.dart';
+import 'package:rf8_admin/widgets/invite_code_sheet.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Member _member(Role role) => Member.fromJson({
@@ -62,6 +63,17 @@ void main() {
       expect(whatsappNumber(null), isNull);
       expect(whatsappNumber('  '), isNull);
     });
+  });
+
+  test('mensaje de invitación con el código', () {
+    final msg = inviteMessage(
+      'Lucía Fernández',
+      InviteCode(code: 'RF8-AB12-CD34', invitationId: 'i', expiresAt: DateTime(2026, 10, 31, 12)),
+    );
+    expect(msg, contains('¡Hola Lucía!'));
+    expect(msg, contains('RF8-AB12-CD34'));
+    expect(msg, contains('Tengo una invitación'));
+    expect(msg, contains('31 de octubre'));
   });
 
   test('plan vigente: el que cubre hoy o el próximo', () {

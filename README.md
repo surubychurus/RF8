@@ -5,7 +5,7 @@ App de socios de [RF8 Gimnasio](https://www.instagram.com/rf8.gimnasio) en Flutt
 ```
 apps/member/   App de socios (Flutter, Android + iOS)
 apps/admin/    App de administración (Flutter, Android + iOS) — roles Gym y Dueño
-supabase/      Base de datos, reglas de negocio y Edge Functions (invitaciones por Resend, login)
+supabase/      Base de datos, reglas de negocio y Edge Functions (códigos de invitación, login)
 hosting/       Página /invite de respaldo y archivos .well-known para App Links / Universal Links
 .github/       GitHub Actions: compila los APK de las dos apps
 ```
@@ -20,7 +20,7 @@ las toca (por eso el banner de RF8 usa la tabla `banners`).
 |---|:-:|:-:|
 | Validar turnos (escáner QR + validación manual) | ✅ | ✅ |
 | Ver turnos del día por horario | ✅ | ✅ |
-| Socios: alta por invitación (mail Resend), editar, activar/desactivar, notas | ✅ | ✅ |
+| Socios: alta con código de invitación (copiar / WhatsApp), editar, activar/desactivar, notas | ✅ | ✅ |
 | Gestionar el plan del socio (asignar, renovar, editar, quitar) | ✅ | ✅ |
 | Ver y abrir el WhatsApp del socio | ✅ | ✅ |
 | Notificaciones a un socio | ✅ | ✅ |
@@ -54,10 +54,12 @@ compilación: GitHub Actions descarga esas imágenes y regenera los íconos nati
 
 ## Flujo del socio
 
-1. **Invitación**: el staff da de alta al socio → `send-invite` envía un mail con **Resend**
-   desde el dominio de RF8 con un link `https://app.rf8.com.ar/invite?token=…` (y el código
-   por si el link no abre la app).
-2. **Crear usuario**: el link abre la app → el socio elige **usuario** y **contraseña**.
+1. **Invitación**: el staff da de alta al socio en la app admin (nombre, WhatsApp, plan y, si
+   quiere, email) → se genera un **código** `RF8-XXXX-XXXX` (vale 7 días, un solo uso) que se
+   copia o se manda por **WhatsApp** desde la misma app. Si se pierde, "Generar nuevo código"
+   invalida el anterior.
+2. **Crear usuario**: en la app de socios, "Tengo una invitación" → código → el socio elige
+   **usuario** y **contraseña** (y su email, si el gimnasio no lo cargó).
 3. **Ingreso rápido**: la app pide permiso para usar **biometría** (huella / Face ID) y el socio
    define un **PIN de 6 dígitos** (respaldo si la biometría falla o no está disponible).
 4. Desde ahí, al abrir la app (o volver tras 1 minuto en segundo plano) se desbloquea con
@@ -90,16 +92,21 @@ Mensuales, de 2 tipos — **Rutina normal** y **Seguimiento** — de 1 a 4 días
 (17:00–18:30 y 18:30–20:00) y sobra 20:00–21:00. Se ajusta en `time_slots` (p. ej. un último
 turno 19:30–21:00 superpuesto, o uno de 1 h).
 
-## Marca (placeholders)
+## Marca
+
+Colores del logo: **naranja `#EE6E31`** y **azul marino `#101A33`**.
 
 | Qué | Dónde |
 |---|---|
-| Logo | `apps/member/assets/branding/logo.png` (si no existe se muestra "RF8") |
-| Tipografías | `apps/member/assets/fonts/` + bloque `fonts:` en `pubspec.yaml` + `Brand.displayFont/bodyFont` |
-| Colores | `apps/member/lib/theme/brand.dart` y `apps/admin/lib/theme/brand.dart` (todos PLACEHOLDER) |
-| Íconos de la app | `apps/member/tool/generate_icons.py` (genera Android, iOS y vistas previas) |
-| Mail de invitación | `supabase/functions/send-invite/index.ts` (`inviteHtml`) |
-| Dominio | `app.rf8.com.ar` / `no-reply@rf8.com.ar` (ver abajo) |
+| Logo original | `branding/logo_original.png` |
+| Recortes en alta (emblema y logo) | `branding/make_brand_assets.py` → `emblem_mask.png`, `logo_mask.png` |
+| Logos de las apps e ícono admin | `branding/generate_app_assets.py` → `apps/*/assets/branding/` |
+| Íconos de la app de socios (6 variantes) | `apps/member/tool/generate_icons.py` |
+| Colores | `apps/member/lib/theme/brand.dart` y `apps/admin/lib/theme/brand.dart` |
+| Tipografías | PLACEHOLDER: `apps/member/assets/fonts/` + bloque `fonts:` en `pubspec.yaml` + `Brand.displayFont/bodyFont` |
+| Dominio | PLACEHOLDER `app.rf8.com.ar` (links de invitación, ver abajo) |
+
+El dueño puede cambiar el logo y los íconos desde la app de administración sin recompilar.
 
 ## Puesta en marcha
 
@@ -122,23 +129,15 @@ En demo: usuario `demo` / clave `demo1234`, o "Tengo una invitación" con el có
 
 ### 2. Backend (Supabase)
 
-Ya está aplicado y desplegado en **archivo-natacion** (migraciones + 5 Edge Functions).
-Falta sólo configurar Resend:
-
-```bash
-supabase secrets set --project-ref pnamtuhhettqgkfugzik \
-  RESEND_API_KEY=re_xxx RESEND_FROM="RF8 Gimnasio <no-reply@tu-dominio>" \
-  INVITE_URL_BASE=https://app.rf8.com.ar/invite
-```
+Ya está aplicado y desplegado en **archivo-natacion** (migraciones + 6 Edge Functions). No hace
+falta configurar nada más.
 
 Para recrearlo en otro proyecto:
 
 ```bash
 supabase link --project-ref <ref>
 supabase db push                                   # tablas, RLS y reglas
-cp supabase/.env.example supabase/.env             # completar
-supabase secrets set --env-file supabase/.env
-supabase functions deploy send-invite
+supabase functions deploy create-invite
 supabase functions deploy invite-info --no-verify-jwt
 supabase functions deploy accept-invite --no-verify-jwt
 supabase functions deploy sign-in --no-verify-jwt
@@ -146,7 +145,6 @@ supabase functions deploy delete-user
 ```
 
 - En **Auth → Providers → Email**: desactivar "Allow new users to sign up" (sólo por invitación).
-- En **Resend**: verificar el dominio de RF8 y usar un remitente de ese dominio en `RESEND_FROM`.
 Para apuntar las apps a otro proyecto: `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_KEY=...`.
 
 ### 3. Links de invitación
@@ -155,16 +153,17 @@ Para apuntar las apps a otro proyecto: `--dart-define=SUPABASE_URL=... --dart-de
 - Completar `hosting/.well-known/assetlinks.json` (SHA-256 del certificado de firma) y
   `apple-app-site-association` (Team ID).
 - iOS: agregar la capability **Associated Domains** con `applinks:app.rf8.com.ar` en Xcode.
-- Si cambia el dominio: `AppConfig.appLinkHost`, `AndroidManifest.xml`, `INVITE_URL_BASE`.
+- Si cambia el dominio: `AppConfig.appLinkHost` y `AndroidManifest.xml`.
 
-Mientras tanto, el esquema propio `rf8gym://invite?token=…` y el código manual funcionan siempre.
+Son opcionales: el código manual y el esquema `rf8gym://invite?token=RF8-…` funcionan siempre.
 
 ## Seguridad
 
 - Todas las reglas de turnos se validan en el servidor (`book_slot`, `cancel_booking`), con lock
   por turno para que nunca entren más de 15.
 - RLS: cada socio sólo ve sus datos; sólo puede editar nombre y teléfono.
-- El token de invitación se guarda hasheado (SHA-256), vence a las 72 h y es de un solo uso.
+- El código de invitación se guarda hasheado (SHA-256), vence a los 7 días y es de un solo uso.
+  Sólo el staff puede generarlos.
 - El login por usuario resuelve el email en el servidor (no se expone).
 - QR: `RF8|1|<booking_id>|<step>|<hmac>` con HMAC-SHA256 del secreto del turno y ventana de 30 s;
   una captura de pantalla deja de servir enseguida. `check_in` valida firma, fecha y horario.

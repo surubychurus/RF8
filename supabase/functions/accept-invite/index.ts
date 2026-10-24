@@ -1,13 +1,14 @@
 // Crea el usuario a partir de una invitación: el socio elige usuario y clave.
 // Pública: se llama antes de que exista el usuario.
 //
-// POST { token, username, password }
+// POST { token, username, password, email? }
+// email se pide sólo si la invitación se creó sin email.
 import { error, handler, json } from "../_shared/http.ts";
 import { adminClient } from "../_shared/supabase.ts";
-import { MIN_PASSWORD, sha256, USERNAME_RE } from "../_shared/tokens.ts";
+import { EMAIL_RE, MIN_PASSWORD, normalizeToken, sha256, USERNAME_RE } from "../_shared/tokens.ts";
 
 Deno.serve(handler(async (req) => {
-  const { token, username, password } = await req.json();
+  const { token, username, password, email: givenEmail } = await req.json();
   const cleanUsername = String(username ?? "").trim().toLowerCase();
   if (!token) return error("Falta el token");
   if (!USERNAME_RE.test(cleanUsername)) {
@@ -18,7 +19,7 @@ Deno.serve(handler(async (req) => {
   }
 
   const admin = adminClient();
-  const tokenHash = await sha256(String(token).trim());
+  const tokenHash = await sha256(normalizeToken(token));
 
   // Marca la invitación como usada de forma atómica para evitar doble uso.
   const { data: invite } = await admin
@@ -41,10 +42,23 @@ Deno.serve(handler(async (req) => {
     return error("Ese usuario ya existe, probá con otro", 409);
   }
 
+  const email = invite.email ?? String(givenEmail ?? "").trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) {
+    await release();
+    return error("Ingresá un email válido");
+  }
+  if (!invite.email) {
+    const { data: used } = await admin.from("profiles").select("id").eq("email", email).maybeSingle();
+    if (used) {
+      await release();
+      return error("Ese email ya tiene una cuenta", 409);
+    }
+  }
+
   const { data: created, error: createError } = await admin.auth.admin.createUser({
-    email: invite.email,
+    email,
     password,
-    email_confirm: true, // el email ya fue verificado al recibir el link
+    email_confirm: true, // el alta la autorizó el gimnasio con la invitación
     user_metadata: { username: cleanUsername, full_name: invite.full_name },
   });
   if (createError || !created.user) {
@@ -58,7 +72,7 @@ Deno.serve(handler(async (req) => {
     id: userId,
     username: cleanUsername,
     full_name: invite.full_name,
-    email: invite.email,
+    email,
     phone: invite.phone,
   });
   if (profileError) {
