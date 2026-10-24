@@ -154,12 +154,7 @@ class NotificationsButton extends StatelessWidget {
     final unread = context.watch<MemberController>().unreadCount;
     return IconButton(
       tooltip: 'Notificaciones',
-      onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => ChangeNotifierProvider.value(
-          value: context.read<MemberController>(),
-          child: const NotificationsScreen(),
-        ),
-      )),
+      onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen())),
       icon: Badge(
         isLabelVisible: unread > 0,
         label: Text('$unread'),

@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:rf8_app/app.dart';
 import 'package:rf8_app/data/demo_gym_repository.dart';
+import 'package:rf8_app/screens/cuenta/cuenta_screen.dart';
 import 'package:rf8_app/services/app_icon_service.dart';
 import 'package:rf8_app/services/local_security.dart';
 import 'package:rf8_app/services/session_controller.dart';
@@ -64,6 +65,26 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Ícono de la app'), findsOneWidget);
     expect(find.text('Seguridad'.toUpperCase()), findsOneWidget);
+
+    // Pantallas que se abren con push desde Mi cuenta (necesitan los datos del socio).
+    for (final (entry, title) in [
+      ('Planes y precios', 'Rutina normal'),
+      ('Datos personales', 'Nombre completo'),
+    ]) {
+      await tester.scrollUntilVisible(
+        find.text(entry),
+        200,
+        scrollable: find.descendant(of: find.byType(CuentaScreen), matching: find.byType(Scrollable)).first,
+      );
+      tester.widget<ListTile>(find.ancestor(of: find.text(entry), matching: find.byType(ListTile))).onTap!();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(tester.takeException(), isNull, reason: entry);
+      expect(find.textContaining(title), findsWidgets, reason: entry);
+      Navigator.of(tester.element(find.textContaining(title).first)).pop();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+    }
 
     await tester.tap(find.text('Turnos').last);
     await tester.pump(const Duration(seconds: 1));

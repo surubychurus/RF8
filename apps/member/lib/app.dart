@@ -39,6 +39,9 @@ class Rf8App extends StatelessWidget {
         locale: const Locale('es'),
         supportedLocales: const [Locale('es'), Locale('en')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        // Los datos del socio se proveen por encima del Navigator para que
+        // también los vean las pantallas que se abren con push.
+        builder: (context, child) => _MemberScope(child: child!),
         home: const _RootGate(),
       ),
     );
@@ -59,13 +62,27 @@ class _RootGate extends StatelessWidget {
           : const LoginScreen(),
       SessionStage.setupSecurity => const SecuritySetupScreen(),
       SessionStage.locked => const LockScreen(),
-      SessionStage.unlocked => ChangeNotifierProvider(
-          // Un controlador nuevo por usuario.
-          key: ValueKey(session.userId),
-          create: (ctx) => MemberController(ctx.read<GymRepository>())..load(),
-          child: const HomeShell(),
-        ),
+      SessionStage.unlocked => const HomeShell(),
     };
     return AnimatedSwitcher(duration: const Duration(milliseconds: 250), child: child);
+  }
+}
+
+/// Crea los datos del socio (perfil, plan, turnos, contenido) mientras hay
+/// sesión, uno nuevo por usuario.
+class _MemberScope extends StatelessWidget {
+  const _MemberScope({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final userId = context.select<SessionController, String?>((s) => s.userId);
+    if (userId == null) return child;
+    return ChangeNotifierProvider(
+      key: ValueKey(userId),
+      create: (ctx) => MemberController(ctx.read<GymRepository>())..load(),
+      child: child,
+    );
   }
 }
